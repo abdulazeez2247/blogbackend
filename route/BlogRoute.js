@@ -1,5 +1,6 @@
 const express = require('express')
 const { createBlogs, getallBlogs, getoneBlog, editoneBlog, deleteoneBlog } = require('../controller/BlogController')
+const { registerUser, verifyOtp, resendOTP, loginUser } = require('../controller/UserController')
 const router = express.Router()
 
 router.post('/api/blog' , createBlogs)
@@ -7,5 +8,8 @@ router.get('/api/getallblogs' , getallBlogs)
 router.get('/api/getoneblog/:id' , getoneBlog)
 router.put('/api/editoneblog/:id' , editoneBlog)
 router.delete('/api/deleteoneblog/:id' , deleteoneBlog)
-
+router.post('/register' , registerUser)
+router.post('/verify' , verifyOtp)
+router.post('/resend' , resendOTP)
+router.post('/login' , loginUser)
 module.exports = router

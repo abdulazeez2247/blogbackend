@@ -5,17 +5,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "app": "node ./src/app.js",
-    "app1": "nodemon ./src/app.js"
+    "blog": "nodemon ./src/app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mongodb": "^6.16.0",
-    "mongoose": "^8.14.2"
+    "mongoose": "^8.14.2",
+    "nodemailer": "^7.0.3"
   }
 }

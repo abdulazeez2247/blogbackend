@@ -10,18 +10,27 @@ const port = 5000
 
 
 app.use(express.json())
-app.use(cors(
-    {
-        origin:["http://localhost:5173" , "https://staticblog-seven.vercel.app"]
-    }
-))
-app.use(router)
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
+const allowedOrigins = ["http://localhost:5174" , "https://staticblog-seven.vercel.app"]
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
+app.use('/api' , router)
 
 app.get('/', (req, res)=>{
     res.send('This is the homepage')
-
 })
-mongoose.connect(process.env.mongodb_url).then(()=>{
+
+mongoose.connect(process.env.MONGODB_URL).then(()=>{
     console.log('mongodb connected succesfully');
     app.listen(port, ()=>{
         console.log(`server is running on port ${port}`);
@@ -29,6 +38,6 @@ mongoose.connect(process.env.mongodb_url).then(()=>{
     
 })
 .catch((error)=>{
-    console.log(error);
+    console.log('message' ,error.message);
     
 })
