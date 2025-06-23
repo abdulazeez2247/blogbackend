@@ -282,6 +282,109 @@ const loginUser = async (req, res) => {
 };
 
 
+const forgotpassword = async (req , res)=>{
+    try {
+        const {email} = req.body;
 
+        // validate input
+        if (!email) {
+            console.log('1 Pls enter your email address');
+           return res.status(400).json({message: 'Pls email is required'});
+        }
+        // find user by email and check if user exists
+        const user = await User.findOne({email})
+        if (!user) {
+            console.log('2 User does not exists');
+            return res.status(401).json({message: 'Invalid email'})
+        }
+        
+        // delete existing otp for the user
+        await userVerify.deleteMany({userId: user._id}) 
+        // Send an OTP code if the user exists
+        const newotpmodel = `${Math.floor(1000 + Math.random()* 9000)}`
+        console.log('3 OTP generated for reset password:', newotpmodel);
 
-module.exports = {aboutPage , registerUser , verifyOtp, resendOTP, loginUser}
+        const hashedotp = await bcrypt.hash(newotpmodel, 10);
+
+        // SAVE NEW OTP TO MONGODB
+        const OTP = new userVerify({
+            userId: user._id,
+            otp: hashedotp,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 5 * 60 * 1000
+        })
+        await OTP.save();
+        console.log('4 New OTP saved to DB:', OTP);
+
+        const mailOptions = {
+            from:process.env.EMAILSECRET,
+            to:email,
+            subject:'Reset your password',
+            html:`<p>
+                Your OTP is <b>${newotpmodel}</b> use this OTP to reset your password.
+                Thank you!
+            </p>`
+        }
+        // send emails with error handling
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('5 New verification OTP email sent to', email);
+            return res.status(200).json({message: 'OTP to reset password  sent successfully!'});
+        } catch (emailError) {
+            console.error('6 Failed to send  OTP email to', email, 'Error:', emailError.message);
+            return res.status(500).json({message: 'Failed to send OTP email. Please try again later.'});
+        }
+    } catch (error) {
+        console.error('7 Resend OTP general error:', error);
+        return res.status(500).json({message: 'Server error during OTP resend.'})
+    }
+}
+const createnewpassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+
+    if (!email || !otp || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const otpRecord = await userVerify.findOne({ userId: user._id });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "OTP record not found." });
+    }
+
+    if (Date.now() > otpRecord.expiresAt) {
+      await userVerify.deleteMany({ userId: user._id });
+      return res.status(400).json({ message: "OTP expired. Please request a new one." });
+    }
+
+    const isMatch = await bcrypt.compare(otp, otpRecord.otp);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    // Clear OTP
+    await userVerify.deleteMany({ userId: user._id });
+
+    // Optionally auto login after password reset
+    return res.status(200).json({ message: "Password updated successfully. You can now log in." });
+
+  } catch (error) {
+    console.error("Create New Password Error:", error.message);
+    return res.status(500).json({ message: "Server error while resetting password." });
+  }
+};
+
+module.exports = {aboutPage , registerUser , verifyOtp, resendOTP, loginUser, forgotpassword, createnewpassword}

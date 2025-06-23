@@ -12,7 +12,7 @@ const port = 5000
 app.use(express.json())
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
-const allowedOrigins = ["http://localhost:5173" , "https://staticblog-seven.vercel.app"]
+const allowedOrigins = ["http://localhost:5174" , "https://staticblog-seven.vercel.app"]
 
 app.use(cors({
     origin: function (origin, callback) {
